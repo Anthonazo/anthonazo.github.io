@@ -1,0 +1,1536 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anthony Moya Ochoa // Infrastructure &amp; Full-Stack Systems</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            bone: {
+              50: '#FAF8F5',
+              100: '#F4F1EA',
+              200: '#EBE5D8',
+              300: '#DED6C4',
+              400: '#C8BEA8',
+              border: '#D8D0C0',
+              borderDark: '#B5A992'
+            },
+            ink: {
+              950: '#0B0C0E',
+              900: '#111215',
+              850: '#181A1E',
+              800: '#22252A',
+              700: '#32363D',
+              600: '#525862',
+              muted: '#7A818D'
+            },
+            telemetry: {
+              green: '#15803D',
+              greenGlow: '#22C55E',
+              amber: '#B45309',
+              amberGlow: '#F59E0B',
+              blue: '#1D4ED8',
+              blueGlow: '#3B82F6',
+              red: '#B91C1C'
+            }
+          },
+          fontFamily: {
+            mono: ['"JetBrains Mono"', 'monospace'],
+            sans: ['"Space Grotesk"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom scrollbar & technical grid styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F4F1EA;
+      border-left: 1px solid #D8D0C0;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #C8BEA8;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #111215;
+    }
+    
+    .technical-grid {
+      background-size: 24px 24px;
+      background-image: 
+        linear-gradient(to right, rgba(181, 169, 146, 0.22) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(181, 169, 146, 0.22) 1px, transparent 1px);
+    }
+    
+    .dark .technical-grid {
+      background-size: 24px 24px;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    }
+    
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.35; transform: scale(0.92); }
+    }
+    .pulse-beacon {
+      animation: pulse-subtle 2.2s ease-in-out infinite;
+    }
+
+    @keyframes dash {
+      to {
+        stroke-dashoffset: -28;
+      }
+    }
+    .flow-line {
+      stroke-dasharray: 4, 4;
+      animation: dash 1.1s linear infinite;
+    }
+    
+    ::selection {
+      background: #111215;
+      color: #F4F1EA;
+    }
+    .dark ::selection {
+      background: #FAF8F5;
+      color: #111215;
+    }
+  </style>
+</head>
+
+<body class="bg-bone-100 dark:bg-ink-950 text-ink-900 dark:text-bone-100 font-sans antialiased min-h-screen technical-grid transition-colors duration-300">
+
+  <!-- ================= TOP HUD & TELEMETRY ================= -->
+  <header class="border-b border-bone-border dark:border-ink-800 bg-bone-100/90 dark:bg-ink-900/90 backdrop-blur-md sticky top-0 z-50 transition-colors">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-wrap items-center justify-between py-2.5 gap-2 text-xs font-mono">
+        
+        <!-- Live System Status -->
+        <div class="flex items-center space-x-3">
+          <span class="inline-flex items-center px-2 py-0.5 border border-bone-border dark:border-ink-700 bg-bone-50 dark:bg-ink-800 text-ink-950 dark:text-bone-50">
+            <span class="w-2 h-2 rounded-full bg-telemetry-green mr-2 pulse-beacon"></span>
+            <span class="font-bold tracking-wider">SYSTEMS_ACTIVE</span>
+          </span>
+          <span class="hidden md:inline text-ink-600 dark:text-bone-300">
+            LOC: <strong class="text-ink-900 dark:text-bone-100">CUENCA, EC</strong> [UTC-5]
+          </span>
+        </div>
+
+        <!-- Telemetry Clock & Latency -->
+        <div class="flex items-center space-x-4 sm:space-x-6 text-ink-600 dark:text-bone-300">
+          <div class="hidden sm:flex items-center space-x-1.5">
+            <span>EDGE:</span>
+            <span class="text-ink-950 dark:text-bone-100 font-medium">AWS.US-EAST-1 // PVE-LOCAL</span>
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <span>UPTIME:</span>
+            <span class="text-ink-950 dark:text-bone-100 font-bold">99.98%</span>
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <span>SYS_TIME:</span>
+            <span id="utc-clock" class="text-ink-950 dark:text-bone-100 font-medium">00:00:00</span>
+          </div>
+        </div>
+
+        <!-- Navigation Links & Theme Toggle -->
+        <div class="flex items-center space-x-3">
+          <a href="#topology" class="hover:text-ink-950 dark:hover:text-white underline underline-offset-4 decoration-bone-border dark:decoration-ink-700">Topology</a>
+          <span class="text-bone-borderDark dark:text-ink-700">/</span>
+          <a href="#career" class="hover:text-ink-950 dark:hover:text-white underline underline-offset-4 decoration-bone-border dark:decoration-ink-700">Ledger</a>
+          <span class="text-bone-borderDark dark:text-ink-700">/</span>
+          <a href="#case-studies" class="hover:text-ink-950 dark:hover:text-white underline underline-offset-4 decoration-bone-border dark:decoration-ink-700">Deployments</a>
+          <span class="text-bone-borderDark dark:text-ink-700">/</span>
+          <a href="#terminal" class="hover:text-ink-950 dark:hover:text-white underline underline-offset-4 decoration-bone-border dark:decoration-ink-700">CLI</a>
+          <span class="text-bone-borderDark dark:text-ink-700">/</span>
+          <a href="#contact" class="hover:text-ink-950 dark:hover:text-white underline underline-offset-4 decoration-bone-border dark:decoration-ink-700">Contact</a>
+          <span class="text-bone-borderDark dark:text-ink-700">/</span>
+          <a href="https://github.com/anthonazo" target="_blank" rel="noopener noreferrer" class="font-bold hover:text-ink-950 dark:hover:text-white flex items-center space-x-1">
+            <span>GH</span>
+            <span class="text-[9px]">↗</span>
+          </a>
+          <span class="text-bone-borderDark dark:text-ink-700">/</span>
+          <a href="https://linkedin.com/in/anthonazo" target="_blank" rel="noopener noreferrer" class="font-bold hover:text-ink-950 dark:hover:text-white flex items-center space-x-1">
+            <span>IN</span>
+            <span class="text-[9px]">↗</span>
+          </a>
+          <span class="text-bone-borderDark dark:text-ink-700">/</span>
+          <!-- Contrast Mode Button -->
+          <button onclick="toggleTheme()" class="p-1 border border-bone-border dark:border-ink-700 hover:bg-bone-200 dark:hover:bg-ink-800 transition-colors" title="Toggle Stark Theme">
+            <span id="theme-icon" class="text-[11px] font-mono px-1">◐</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTAINER ================= -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-14 space-y-16 md:space-y-20">
+
+    <!-- HERO SECTION: PROFILE & SPECIALIZATION -->
+    <section class="border border-bone-border dark:border-ink-800 bg-bone-50/80 dark:bg-ink-900/60 p-6 sm:p-10 lg:p-12 relative overflow-hidden shadow-sm">
+      <div class="absolute top-0 right-0 p-3 sm:p-4 text-[10px] font-mono text-ink-600 dark:text-bone-400 border-l border-b border-bone-border dark:border-ink-800 bg-bone-100 dark:bg-ink-850 uppercase tracking-widest flex items-center space-x-3">
+        <span>ENG_ID: MOYA-ANTHONY</span>
+        <span class="text-bone-borderDark dark:text-ink-700">&bull;</span>
+        <a href="https://github.com/anthonazo" target="_blank" rel="noopener noreferrer" class="text-ink-950 dark:text-bone-100 hover:underline">github.com/anthonazo ↗</a>
+      </div>
+
+      <div class="max-w-4xl space-y-6">
+        <div class="inline-flex items-center space-x-2 text-xs font-mono uppercase tracking-widest text-ink-600 dark:text-bone-300">
+          <span class="w-2 h-2 bg-ink-950 dark:bg-bone-100"></span>
+          <span>Infrastructure &amp; Cloud Systems Engineer &bull; Full-Stack Developer</span>
+        </div>
+
+        <h1 class="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-ink-950 dark:text-bone-50 leading-[1.08] font-sans">
+          Anthony Moya Ochoa
+        </h1>
+
+        <p class="text-base sm:text-lg text-ink-800 dark:text-bone-200 font-mono leading-relaxed max-w-3xl">
+          Building resilient enterprise backends, containerized infrastructure, and autonomous agent systems. Bridging production Java &amp; Python software engineering with cloud architecture, edge virtualization (Proxmox VE), and distributed observability.
+        </p>
+
+        <!-- Social Channels & Connect Quick Strip -->
+        <div class="flex flex-wrap items-center gap-3 pt-1 font-mono text-xs">
+          <a href="https://github.com/anthonazo" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-2 px-3 py-1.5 border border-ink-950 dark:border-bone-100 bg-ink-950 dark:bg-bone-100 text-bone-100 dark:text-ink-950 hover:bg-transparent hover:text-ink-950 dark:hover:bg-transparent dark:hover:text-bone-100 transition-colors font-semibold">
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+            <span>github.com/anthonazo</span>
+            <span>↗</span>
+          </a>
+
+          <a href="https://linkedin.com/in/anthonazo" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-2 px-3 py-1.5 border border-bone-border dark:border-ink-700 bg-bone-200 dark:bg-ink-800 text-ink-950 dark:text-bone-100 hover:border-ink-950 dark:hover:border-bone-100 transition-colors font-semibold">
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+            <span>linkedin.com/in/anthonazo</span>
+            <span>↗</span>
+          </a>
+
+          <button onclick="copyEmail()" class="inline-flex items-center space-x-2 px-3 py-1.5 border border-bone-border dark:border-ink-700 bg-bone-100 dark:bg-ink-850 text-ink-900 dark:text-bone-200 hover:bg-bone-200 dark:hover:bg-ink-800 transition-colors">
+            <span>✉</span>
+            <span id="hero-copy-label">anthonymoya246@gmail.com</span>
+            <span class="text-[10px] text-ink-600 dark:text-bone-400">[COPY]</span>
+          </button>
+        </div>
+
+        <!-- Certifications & Credentials Pill Bar -->
+        <div class="flex flex-wrap gap-2 pt-1 font-mono text-xs">
+          <span class="inline-flex items-center px-3 py-1 bg-bone-200 dark:bg-ink-800 border border-bone-border dark:border-ink-700 text-ink-950 dark:text-bone-100">
+            <span class="w-1.5 h-1.5 rounded-full bg-telemetry-green mr-2"></span>
+            AWS Certified Cloud Practitioner (CLF-C02 &bull; 890)
+          </span>
+          <span class="inline-flex items-center px-3 py-1 bg-bone-200 dark:bg-ink-800 border border-bone-border dark:border-ink-700 text-ink-950 dark:text-bone-100">
+            <span class="w-1.5 h-1.5 rounded-full bg-telemetry-blue mr-2"></span>
+            AWS Solutions Architect Candidate
+          </span>
+          <span class="inline-flex items-center px-3 py-1 bg-bone-200 dark:bg-ink-800 border border-bone-border dark:border-ink-700 text-ink-950 dark:text-bone-100">
+            <span class="w-1.5 h-1.5 rounded-full bg-telemetry-amber mr-2"></span>
+            AWS AI &amp; ML Scholar
+          </span>
+          <span class="inline-flex items-center px-3 py-1 bg-bone-200 dark:bg-ink-800 border border-bone-border dark:border-ink-700 text-ink-950 dark:text-bone-100">
+            Deep Learning Researcher (ICITC 2025)
+          </span>
+        </div>
+
+        <!-- Engineering Metrics Bar -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 font-mono text-xs">
+          <div class="p-3 border border-bone-border dark:border-ink-800 bg-bone-100 dark:bg-ink-850">
+            <span class="text-ink-600 dark:text-bone-400 block text-[10px]">CORE_LANGUAGES</span>
+            <span class="text-sm sm:text-base font-bold text-ink-950 dark:text-bone-50">Java &bull; Python &bull; TS</span>
+          </div>
+          <div class="p-3 border border-bone-border dark:border-ink-800 bg-bone-100 dark:bg-ink-850">
+            <span class="text-ink-600 dark:text-bone-400 block text-[10px]">ENTERPRISE_FRAMEWORKS</span>
+            <span class="text-sm sm:text-base font-bold text-ink-950 dark:text-bone-50">Spring Boot &bull; Angular</span>
+          </div>
+          <div class="p-3 border border-bone-border dark:border-ink-800 bg-bone-100 dark:bg-ink-850">
+            <span class="text-ink-600 dark:text-bone-400 block text-[10px]">INFRA_VIRTUALIZATION</span>
+            <span class="text-sm sm:text-base font-bold text-ink-950 dark:text-bone-50">Proxmox &bull; Docker &bull; K8s</span>
+          </div>
+          <div class="p-3 border border-bone-border dark:border-ink-800 bg-bone-100 dark:bg-ink-850">
+            <span class="text-ink-600 dark:text-bone-400 block text-[10px]">APM_&amp;_METRICS</span>
+            <span class="text-sm sm:text-base font-bold text-ink-950 dark:text-bone-50">IBM Instana &bull; Zabbix</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= REAL PRODUCTION TOPOLOGY VIEWER ================= -->
+    <section id="topology" class="space-y-6">
+      <div class="flex flex-col md:flex-row md:items-end justify-between border-b border-bone-border dark:border-ink-800 pb-4 gap-3">
+        <div>
+          <span class="text-xs font-mono text-ink-600 dark:text-bone-400 uppercase tracking-widest">// ARCHITECTURE ENGINE</span>
+          <h2 class="text-2xl sm:text-3xl font-bold text-ink-950 dark:text-bone-50 font-sans tracking-tight">Multi-Tier Architecture &amp; Hybrid Enclave</h2>
+        </div>
+        <p class="text-xs font-mono text-ink-600 dark:text-bone-400 max-w-md">
+          Live inspection map of production clusters, enterprise gateways, autonomous agent runtimes, and local Proxmox virtualization nodes.
+        </p>
+      </div>
+
+      <!-- Topology Canvas & Telemetry Panel Split -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 border border-bone-border dark:border-ink-800 bg-bone-50 dark:bg-ink-900">
+        
+        <!-- Interactive Canvas Area -->
+        <div class="lg:col-span-8 p-4 sm:p-6 border-b lg:border-b-0 lg:border-r border-bone-border dark:border-ink-800 flex flex-col justify-between relative bg-bone-100/50 dark:bg-ink-950/40">
+          
+          <div class="flex items-center justify-between mb-4 text-xs font-mono">
+            <span class="text-ink-600 dark:text-bone-400">ENCLAVE: <strong class="text-ink-900 dark:text-bone-100">HYBRID-AWS-PROXMOX-OVERLAY</strong></span>
+            <div class="flex items-center space-x-2">
+              <span class="w-2 h-2 rounded-full bg-telemetry-green pulse-beacon"></span>
+              <span class="text-ink-700 dark:text-bone-200">TAILSCALE MESH: ROUTED</span>
+            </div>
+          </div>
+
+          <!-- SVG Visual Diagram -->
+          <div class="w-full overflow-x-auto py-3">
+            <svg viewBox="0 0 760 380" class="w-full min-w-[680px] h-auto select-none font-mono">
+              <!-- Grid Lines -->
+              <!-- AWS Perimeter to Banking Gateway -->
+              <line x1="120" y1="190" x2="220" y2="190" stroke="#B5A992" stroke-width="2" />
+              <line x1="120" y1="190" x2="220" y2="190" stroke="#111215" stroke-width="2" class="flow-line" />
+
+              <!-- Gateway to Banking App & AI Agents -->
+              <path d="M 330 190 L 400 115" stroke="#B5A992" stroke-width="2" />
+              <path d="M 330 190 L 400 265" stroke="#B5A992" stroke-width="2" />
+              <path d="M 330 190 L 400 115" stroke="#111215" stroke-width="2" class="flow-line" />
+              <path d="M 330 190 L 400 265" stroke="#111215" stroke-width="2" class="flow-line" />
+
+              <!-- App Cluster & Agents to Instana/Zabbix + Homelab -->
+              <line x1="520" y1="115" x2="590" y2="115" stroke="#B5A992" stroke-width="2" />
+              <line x1="520" y1="265" x2="590" y2="265" stroke="#B5A992" stroke-width="2" />
+              <line x1="520" y1="115" x2="590" y2="115" stroke="#111215" stroke-width="2" class="flow-line" />
+              <line x1="520" y1="265" x2="590" y2="265" stroke="#111215" stroke-width="2" class="flow-line" />
+
+              <!-- Inter-fabric link between APM and Edge -->
+              <path d="M 645 155 L 645 225" stroke="#B5A992" stroke-dasharray="2,2" stroke-width="1.5" />
+
+              <!-- NODE 1: PERIMETER & ROUTING -->
+              <g class="cursor-pointer group" onclick="inspectNode('perimeter')">
+                <rect id="rect-perimeter" x="20" y="150" width="100" height="80" fill="#EBE5D8" stroke="#111215" stroke-width="2" class="transition-colors" />
+                <text x="70" y="180" font-size="11" font-weight="700" fill="#111215" text-anchor="middle">PERIMETER</text>
+                <text x="70" y="196" font-size="8" fill="#525862" text-anchor="middle">AWS Route53 / WAF</text>
+                <text x="70" y="210" font-size="8" fill="#15803D" text-anchor="middle">Tailscale Mesh</text>
+              </g>
+
+              <!-- NODE 2: ENTERPRISE GATEWAY & SSO -->
+              <g class="cursor-pointer group" onclick="inspectNode('gateway')">
+                <rect id="rect-gateway" x="220" y="145" width="110" height="90" fill="#111215" stroke="#111215" stroke-width="2" class="transition-all" />
+                <text x="275" y="180" font-size="11" font-weight="700" fill="#FAF8F5" text-anchor="middle">ENTERPRISE GW</text>
+                <text x="275" y="196" font-size="8" fill="#C8BEA8" text-anchor="middle">Reverse Proxy / AD SSO</text>
+                <text x="275" y="210" font-size="8" fill="#C8BEA8" text-anchor="middle">Kerberos / JWT Auth</text>
+                <circle cx="275" cy="222" r="3" fill="#22C55E" />
+              </g>
+
+              <!-- NODE 3: FULLSTACK CORE APPS (Angular + Spring Boot) -->
+              <g class="cursor-pointer group" onclick="inspectNode('coreapp')">
+                <rect id="rect-coreapp" x="400" y="75" width="120" height="80" fill="#EBE5D8" stroke="#111215" stroke-width="1.5" class="transition-colors" />
+                <text x="460" y="105" font-size="11" font-weight="700" fill="#111215" text-anchor="middle">CORE APP FABRIC</text>
+                <text x="460" y="121" font-size="8" fill="#525862" text-anchor="middle">Spring Boot 3 + Angular</text>
+                <text x="460" y="135" font-size="8" fill="#15803D" text-anchor="middle">Dockerized &bull; REST APIs</text>
+              </g>
+
+              <!-- NODE 4: AUTONOMOUS AI AGENT CORE -->
+              <g class="cursor-pointer group" onclick="inspectNode('agents')">
+                <rect id="rect-agents" x="400" y="225" width="120" height="80" fill="#EBE5D8" stroke="#111215" stroke-width="1.5" class="transition-colors" />
+                <text x="460" y="255" font-size="11" font-weight="700" fill="#111215" text-anchor="middle">AGENT CORE (AI)</text>
+                <text x="460" y="271" font-size="8" fill="#525862" text-anchor="middle">Bedrock AgentCore</text>
+                <text x="460" y="285" font-size="8" fill="#1D4ED8" text-anchor="middle">Strands SDK &bull; Multi-Agent</text>
+              </g>
+
+              <!-- NODE 5: DISTRIBUTED APM & OBSERVABILITY (Instana & Zabbix) -->
+              <g class="cursor-pointer group" onclick="inspectNode('apm')">
+                <rect id="rect-apm" x="590" y="75" width="115" height="80" fill="#EBE5D8" stroke="#111215" stroke-width="1.5" class="transition-colors" />
+                <text x="647" y="105" font-size="10" font-weight="700" fill="#111215" text-anchor="middle">IBM INSTANA + ZBX</text>
+                <text x="647" y="121" font-size="8" fill="#525862" text-anchor="middle">Distributed Tracing</text>
+                <text x="647" y="135" font-size="8" fill="#15803D" text-anchor="middle">Banking Trans Metrics</text>
+              </g>
+
+              <!-- NODE 6: PRIVATE HOMELAB & EDGE (Proxmox ThinkCentre) -->
+              <g class="cursor-pointer group" onclick="inspectNode('homelab')">
+                <rect id="rect-homelab" x="590" y="225" width="115" height="80" fill="#EBE5D8" stroke="#111215" stroke-width="1.5" class="transition-colors" />
+                <text x="647" y="255" font-size="10" font-weight="700" fill="#111215" text-anchor="middle">PROXMOX CLUSTER</text>
+                <text x="647" y="271" font-size="8" fill="#525862" text-anchor="middle">M720q Tiny &bull; LXC / Podman</text>
+                <text x="647" y="285" font-size="8" fill="#525862" text-anchor="middle">Technitium DNS &bull; WireGuard</text>
+              </g>
+            </svg>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between text-[11px] font-mono text-ink-600 dark:text-bone-400 pt-3 border-t border-bone-border dark:border-ink-800 gap-2">
+            <div>AUDIT MODE: <span class="text-ink-950 dark:text-bone-100 font-bold">CLICK NODES TO REVEAL SPECS &amp; LOGS</span></div>
+            <div class="flex items-center space-x-4">
+              <span class="flex items-center"><span class="w-2.5 h-2.5 bg-ink-950 dark:bg-bone-50 inline-block mr-1.5"></span> Selected Node</span>
+              <span class="flex items-center"><span class="w-2.5 h-2.5 bg-[#EBE5D8] border border-ink-900 inline-block mr-1.5"></span> Healthy Node</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Node Telemetry Inspector Sidebar -->
+        <div class="lg:col-span-4 p-5 sm:p-6 bg-bone-50 dark:bg-ink-900 flex flex-col justify-between">
+          <div class="space-y-4">
+            <div class="flex items-center justify-between border-b border-bone-border dark:border-ink-800 pb-3">
+              <span class="text-[10px] font-mono uppercase tracking-widest text-ink-600 dark:text-bone-400">TELEMETRY_INSPECTOR</span>
+              <span id="node-tag" class="px-2 py-0.5 text-[10px] font-mono bg-ink-950 dark:bg-bone-100 text-bone-100 dark:text-ink-950 font-bold uppercase">ENTERPRISE_GATEWAY</span>
+            </div>
+
+            <div>
+              <h3 id="node-title" class="text-xl font-bold font-sans text-ink-950 dark:text-bone-100">Enterprise Reverse Proxy &amp; AD SSO Gateway</h3>
+              <p id="node-desc" class="text-xs font-mono text-ink-700 dark:text-bone-300 mt-1 leading-relaxed">
+                Centralized edge ingress orchestrating Active Directory authentication, automated Kerberos/JWT token issuance, and secure reverse proxy routing into internal banking containers.
+              </p>
+            </div>
+
+            <!-- Detailed Specs -->
+            <div class="space-y-2.5 font-mono text-xs pt-2">
+              <div class="flex justify-between py-1 border-b border-bone-border/70 dark:border-ink-800">
+                <span class="text-ink-600 dark:text-bone-400">ENGINE / RUNTIME:</span>
+                <span id="node-engine" class="font-semibold text-ink-950 dark:text-bone-100">Nginx / Go Gateway + Kerberos LDAP</span>
+              </div>
+              <div class="flex justify-between py-1 border-b border-bone-border/70 dark:border-ink-800">
+                <span class="text-ink-600 dark:text-bone-400">NETWORK_SEGMENT:</span>
+                <span id="node-subnet" class="font-semibold text-ink-950 dark:text-bone-100">VLAN 40 (DMZ) &bull; Tailscale Auth Node</span>
+              </div>
+              <div class="flex justify-between py-1 border-b border-bone-border/70 dark:border-ink-800">
+                <span class="text-ink-600 dark:text-bone-400">OBSERVABILITY:</span>
+                <span id="node-obs" class="font-semibold text-ink-950 dark:text-bone-100">Instana Tracing + Zabbix Agent2</span>
+              </div>
+              <div class="flex justify-between py-1 border-b border-bone-border/70 dark:border-ink-800">
+                <span class="text-ink-600 dark:text-bone-400">STATUS_POLICY:</span>
+                <span id="node-status" class="font-semibold text-telemetry-green">100% Up &bull; Active Token Validation</span>
+              </div>
+            </div>
+
+            <!-- Mini Live Log Terminal -->
+            <div class="p-3 bg-ink-950 text-bone-200 font-mono text-[11px] rounded-none border border-ink-800 space-y-1">
+              <div class="text-[9px] text-ink-muted uppercase border-b border-ink-800 pb-1 mb-1 flex justify-between">
+                <span>Kernel &amp; Service Stream</span>
+                <span class="text-telemetry-greenGlow">LIVE</span>
+              </div>
+              <p id="node-log-1" class="text-bone-300">$ ldapsearch -H ldaps://ad.corp -b "dc=corp,dc=internal"</p>
+              <p id="node-log-2" class="text-telemetry-greenGlow">[ad-sso] BIND successful for user: bank_operator_08</p>
+              <p id="node-log-3" class="text-ink-muted">[proxy] JWT signed with RSA-256 (expires in 3600s)</p>
+            </div>
+          </div>
+
+          <button onclick="pingCurrentNode()" class="mt-4 w-full py-2.5 border border-ink-900 dark:border-bone-300 bg-ink-950 dark:bg-bone-100 text-bone-100 dark:text-ink-950 hover:bg-bone-100 hover:text-ink-950 dark:hover:bg-ink-800 dark:hover:text-bone-100 transition-all font-mono text-xs font-semibold tracking-wider flex items-center justify-center space-x-2">
+            <span>DISPATCH HEALTH PROBE</span>
+            <span id="ping-btn-indicator" class="text-[10px] text-telemetry-greenGlow">●</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= OPERATIONAL CAREER AUDIT LEDGER ================= -->
+    <section id="career" class="space-y-6">
+      <div class="flex flex-col md:flex-row md:items-end justify-between border-b border-bone-border dark:border-ink-800 pb-4 gap-3">
+        <div>
+          <span class="text-xs font-mono text-ink-600 dark:text-bone-400 uppercase tracking-widest">// SYSTEM AUDIT RECORD</span>
+          <h2 class="text-2xl sm:text-3xl font-bold text-ink-950 dark:text-bone-50 font-sans tracking-tight">Operational Career Ledger</h2>
+        </div>
+        <p class="text-xs font-mono text-ink-600 dark:text-bone-400 max-w-md">
+          Chronological record of engineering roles, production infrastructure mandates, enterprise codebases, and academic publications.
+        </p>
+      </div>
+
+      <!-- Audit Ledger Table / Log View -->
+      <div class="border border-bone-border dark:border-ink-800 bg-bone-50 dark:bg-ink-900 divide-y divide-bone-border dark:divide-ink-800 font-mono text-xs">
+        
+        <!-- Entry 01: Banco del Austro - Infrastructure Engineer -->
+        <div class="p-5 sm:p-6 hover:bg-bone-100/60 dark:hover:bg-ink-850/60 transition-colors space-y-2">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+            <div class="flex items-center space-x-3">
+              <span class="w-2 h-2 rounded-full bg-telemetry-green pulse-beacon"></span>
+              <span class="font-bold text-sm sm:text-base font-sans text-ink-950 dark:text-bone-50">Banco del Austro</span>
+              <span class="text-ink-600 dark:text-bone-400">/</span>
+              <span class="font-semibold text-ink-900 dark:text-bone-200">Infrastructure Systems Engineer</span>
+            </div>
+            <div class="flex items-center space-x-2 text-[11px] text-ink-600 dark:text-bone-400">
+              <span class="px-2 py-0.5 bg-bone-200 dark:bg-ink-800 border border-bone-border dark:border-ink-700 text-telemetry-green font-bold">ACTIVE ROLE</span>
+              <span>Nov 2025 – Present</span>
+            </div>
+          </div>
+          <p class="text-ink-800 dark:text-bone-300 leading-relaxed text-[12px] pt-1">
+            Orchestrating end-to-end APM observability across core banking transaction paths using <strong class="text-ink-950 dark:text-bone-100">IBM Instana</strong> and distributed <strong class="text-ink-950 dark:text-bone-100">Zabbix</strong> agents. Managing continual Linux OS vulnerability remediation, container baseline hardening via Docker, and Infrastructure as Code (IaC) automation under rigorous financial regulatory compliance standards.
+          </p>
+          <div class="flex flex-wrap gap-1.5 pt-1 text-[10px] text-ink-700 dark:text-bone-400">
+            <span class="px-2 py-0.5 border border-bone-border dark:border-ink-700 bg-bone-100 dark:bg-ink-800">IBM Instana APM</span>
+            <span class="px-2 py-0.5 border border-bone-border dark:border-ink-700 bg-bone-100 dark:bg-ink-800">Zabbix 6.4 LTS</span>
+            <span class="px-2 py-0.5 border border-bone-border dark:border-ink-700 bg-bone-100 dark:bg-ink-800">Terraform</span>
+            <span class="px-2 py-0.5 border border-bone-border dark:border-ink-700 bg-bone-100 dark:bg-ink-800">Docker</span>
+            <span class="px-2 py-0.5 border border-bone-border dark:border-ink-700 bg-bone-100 dark:bg-ink-800">Linux Hardening</span>
+            <span class="px-2 py-0.5 border border-bone-border dark:border-ink-700 bg-bone-100 dark:bg-ink-800">Financial Compliance</span>
+          </div>
+        </div>
+
+        <!-- Entry 02: Banco del Austro - Infrastructure & Full-Stack Intern -->
+        <div class="p-5 sm:p-6 hover:bg-bone-100/60 dark:hover:bg-ink-850/60 transition-colors space-y-2">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+            <div class="flex items-center space-x-3">
+              <span class="w-2 h-2 rounded-full bg-telemetry-blue"></span>
+              <span class="font-bold text-sm sm:text-base font-sans text-ink-950 dark:text-bone-50">Banco del Austro</span>
+              <span class="text-ink-600 dark:text-bone-400">/</span>
+              <span class="font-semibold text-ink-900 dark:text-bone-200">Infrastructure &amp; Full-Stack Software Intern</span>
+            </div>
+            <div class="flex items-center space-x-2 text-[11px] text-ink-600 dark:text-bone-400">
+              <span class="px-2 py-0.5 bg-bone-200 dark:bg-ink-800 border border-bone-border dark:border-ink-700 text-ink-700 dark:text-bone-300">COMPLETED</span>
+              <span>May 2025 – Oct 2025</span>
+            </div>
+          </div>
+          <p class="text-ink-800 dark:text-bone-300 leading-relaxed text-[12px] pt-1">
+            Engineered and delivered internal corporate web applications leveraging modern <strong class="text-ink-950 dark:text-bone-100">Angular</strong> SPAs and robust <strong class="text-ink-950 dark:text-bone-100">Java Spring Boot</strong> backends. Implemented enterprise Single Sign-On (SSO) directly authenticated against Active Directory (LDAP) and standardized microservice distribution with Docker.
+          </p>
+          <div class="flex flex-wrap gap-1.5 pt-1 text-[10px] text-ink-700 dark:text-bone-400">
+            <span class="px-2 py-0.5 border border-bone-border dark:border-ink-700 bg-bone-100 dark:bg-ink-800">Spring Boot 3</span>
+            <span class="px-2 py-0.5 border border-bone-border dark:border-ink-700 bg-bone-100 dark:bg-ink-800">Angular</span>
+            <span class="px-2 py-0.5 border border-bone-border dark:border-ink-700 bg-bone-100 dark:bg-ink-800">Active Directory (LDAP)</span>
+            <span class="px-2 py-0.5 border border-bone-border dark:border-ink-700 bg-bone-100 dark:bg-ink-800">Spring Security</span>
+            <span class="px-2 py-0.5 border border-bone-border dark:border-ink-700 bg-bone-100 dark:bg-ink-800">Docker</span>
+          </div>
+        </div>
+
+        <!-- Entry 03: Cuenca Property Registry -->
+        <div class="p-5 sm:p-6 hover:bg-bone-100/60 dark:hover:bg-ink-850/60 transition-colors space-y-2">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+            <div class="flex items-center space-x-3">
+              <span class="w-2 h-2 rounded-full bg-telemetry-amber"></span>
+              <span class="font-bold text-sm sm:text-base font-sans text-ink-950 dark:text-bone-50">Cuenca Property Registry</span>
+              <span class="text-ink-600 dark:text-bone-400">/</span>
+              <span class="font-semibold text-ink-900 dark:text-bone-200">IT Systems Engineering Practicum</span>
+            </div>
+            <div class="flex items-center space-x-2 text-[11px] text-ink-600 dark:text-bone-400">
+              <span class="px-2 py-0.5 bg-bone-200 dark:bg-ink-800 border border-bone-border dark:border-ink-700 text-ink-700 dark:text-bone-300">COMPLETED</span>
+              <span>May 2025 – Jun 2025</span>
+            </div>
+          </div>
+          <p class="text-ink-800 dark:text-bone-300 leading-relaxed text-[12px] pt-1">
+            Containerized and provisioned <strong class="text-ink-950 dark:text-bone-100">WildFly (JBoss)</strong> enterprise application servers inside Docker. Configured cryptographic modules and runtime dependencies for national electronic signatures (<strong class="text-ink-950 dark:text-bone-100">FIRMAEC</strong>), ensuring PKI compliance and reliable digital notary workflows.
+          </p>
+          <div class="flex flex-wrap gap-1.5 pt-1 text-[10px] text-ink-700 dark:text-bone-400">
+            <span class="px-2 py-0.5 border border-bone-border dark:border-ink-700 bg-bone-100 dark:bg-ink-800">WildFly Application Server</span>
+            <span class="px-2 py-0.5 border border-bone-border dark:border-ink-700 bg-bone-100 dark:bg-ink-800">Docker</span>
+            <span class="px-2 py-0.5 border border-bone-border dark:border-ink-700 bg-bone-100 dark:bg-ink-800">FIRMAEC PKI</span>
+            <span class="px-2 py-0.5 border border-bone-border dark:border-ink-700 bg-bone-100 dark:bg-ink-800">Linux</span>
+          </div>
+        </div>
+
+        <!-- Entry 04: ICITC 2025 Research Paper -->
+        <div class="p-5 sm:p-6 hover:bg-bone-100/60 dark:hover:bg-ink-850/60 transition-colors space-y-2">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+            <div class="flex items-center space-x-3">
+              <span class="w-2 h-2 rounded-full bg-ink-700 dark:bg-bone-300"></span>
+              <span class="font-bold text-sm sm:text-base font-sans text-ink-950 dark:text-bone-50">ICITC 2025 (London, UK)</span>
+              <span class="text-ink-600 dark:text-bone-400">/</span>
+              <span class="font-semibold text-ink-900 dark:text-bone-200">Co-Author &amp; Deep Learning Researcher</span>
+            </div>
+            <div class="flex items-center space-x-2 text-[11px] text-ink-600 dark:text-bone-400">
+              <span class="px-2 py-0.5 bg-bone-200 dark:bg-ink-800 border border-bone-border dark:border-ink-700 text-telemetry-blue font-bold">PEER-REVIEWED</span>
+              <span>2025</span>
+            </div>
+          </div>
+          <p class="text-ink-800 dark:text-bone-300 leading-relaxed text-[12px] pt-1">
+            Authored and presented peer-reviewed research on automated MRI neuroimaging analysis for early-stage Alzheimer's disease diagnosis utilizing deep convolutional neural networks and Vision Transformer (ViT) architectures paired with Grad-CAM visual interpretability.
+          </p>
+          <div class="flex flex-wrap gap-1.5 pt-1 text-[10px] text-ink-700 dark:text-bone-400">
+            <span class="px-2 py-0.5 border border-bone-border dark:border-ink-700 bg-bone-100 dark:bg-ink-800">PyTorch</span>
+            <span class="px-2 py-0.5 border border-bone-border dark:border-ink-700 bg-bone-100 dark:bg-ink-800">Vision Transformers (ViT)</span>
+            <span class="px-2 py-0.5 border border-bone-border dark:border-ink-700 bg-bone-100 dark:bg-ink-800">Grad-CAM</span>
+            <span class="px-2 py-0.5 border border-bone-border dark:border-ink-700 bg-bone-100 dark:bg-ink-800">Neuroimaging</span>
+          </div>
+        </div>
+
+        <!-- Entry 05: UPS University Degree -->
+        <div class="p-5 sm:p-6 hover:bg-bone-100/60 dark:hover:bg-ink-850/60 transition-colors space-y-2">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+            <div class="flex items-center space-x-3">
+              <span class="w-2 h-2 rounded-full bg-bone-borderDark dark:bg-ink-600"></span>
+              <span class="font-bold text-sm sm:text-base font-sans text-ink-950 dark:text-bone-50">Salesian Polytechnic University (UPS)</span>
+              <span class="text-ink-600 dark:text-bone-400">/</span>
+              <span class="font-semibold text-ink-900 dark:text-bone-200">B.S. in Computer Science Engineering</span>
+            </div>
+            <div class="flex items-center space-x-2 text-[11px] text-ink-600 dark:text-bone-400">
+              <span class="px-2 py-0.5 bg-bone-200 dark:bg-ink-800 border border-bone-border dark:border-ink-700 text-ink-950 dark:text-bone-100 font-semibold">GRADUATED</span>
+            </div>
+          </div>
+          <p class="text-ink-800 dark:text-bone-300 leading-relaxed text-[12px] pt-1">
+            Comprehensive foundation in computing fundamentals: algorithmic optimization, concurrent and distributed software systems, database internals (relational &amp; NoSQL), computer networks, and enterprise software engineering.
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================= CASE STUDIES & PRODUCTION DEPLOYMENTS ================= -->
+    <section id="case-studies" class="space-y-6">
+      <div class="flex flex-col md:flex-row md:items-end justify-between border-b border-bone-border dark:border-ink-800 pb-4 gap-3">
+        <div>
+          <span class="text-xs font-mono text-ink-600 dark:text-bone-400 uppercase tracking-widest">// PRODUCTION CASE STUDIES</span>
+          <h2 class="text-2xl sm:text-3xl font-bold text-ink-950 dark:text-bone-50 font-sans tracking-tight">Deployments, Code &amp; Systems Engineering</h2>
+        </div>
+        <p class="text-xs font-mono text-ink-600 dark:text-bone-400 max-w-md">
+          Real technical challenges where software architecture met infrastructure resilience, APM observability, and AI automation.
+        </p>
+      </div>
+
+      <!-- Case Studies List -->
+      <div class="space-y-4">
+
+        <!-- Case 01: Core Banking & AD Portal -->
+        <article class="border border-bone-border dark:border-ink-800 bg-bone-50 dark:bg-ink-900 transition-all">
+          <div class="p-6 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4" onclick="toggleCaseStudy('case-01')">
+            <div class="space-y-1.5">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="font-mono text-xs font-bold px-2 py-0.5 bg-ink-950 dark:bg-bone-100 text-bone-100 dark:text-ink-950">PROD_01</span>
+                <span class="text-[11px] font-mono px-2 py-0.5 border border-bone-border dark:border-ink-700 bg-bone-200 dark:bg-ink-800 text-ink-950 dark:text-bone-100">
+                  ENV: Enterprise Banking Production
+                </span>
+                <span class="text-[11px] font-mono text-telemetry-green font-semibold">TYPE: Full-Stack &amp; Identity Auth</span>
+              </div>
+              <h3 class="text-xl font-bold font-sans text-ink-950 dark:text-bone-100">Enterprise Banking Operations Portal &amp; Active Directory Gateway</h3>
+            </div>
+            <div class="flex items-center space-x-6 text-xs font-mono text-ink-600 dark:text-bone-400">
+              <div class="hidden sm:block">STACK: <strong class="text-ink-900 dark:text-bone-200">Angular 17 / Spring Boot / Docker / LDAP</strong></div>
+              <div class="text-right">
+                <span class="text-ink-900 dark:text-bone-100 font-bold text-base block font-sans">0 Drift</span>
+                <span class="text-[10px] text-ink-600 dark:text-bone-400 uppercase">Single Sign-On</span>
+              </div>
+              <span id="arrow-case-01" class="transform transition-transform text-ink-950 dark:text-bone-200 font-mono text-base">↓</span>
+            </div>
+          </div>
+
+          <div id="body-case-01" class="px-6 pb-6 pt-2 border-t border-bone-border/70 dark:border-ink-800 text-ink-800 dark:text-bone-300 space-y-4 text-xs font-mono">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+              <div class="p-4 bg-bone-100 dark:bg-ink-850 border border-bone-border dark:border-ink-700">
+                <span class="text-ink-600 dark:text-bone-400 text-[10px] font-bold block uppercase tracking-wider mb-1">01 // The Challenge</span>
+                <p class="leading-relaxed text-ink-900 dark:text-bone-200">
+                  Multiple disparate financial micro-tools required separate user logins, leading to audit overhead, password fatigue, and security risks during employee role changes.
+                </p>
+              </div>
+              <div class="p-4 bg-bone-100 dark:bg-ink-850 border border-bone-border dark:border-ink-700">
+                <span class="text-ink-600 dark:text-bone-400 text-[10px] font-bold block uppercase tracking-wider mb-1">02 // The Engineering Solution</span>
+                <p class="leading-relaxed text-ink-900 dark:text-bone-200">
+                  Engineered an enterprise Angular 17 SPA with a Spring Boot security backend. Implemented LDAP/Active Directory SSO via Spring Security, signing claims into short-lived, encrypted JWTs with strict RBAC guards. Containerized with multi-stage Docker builds.
+                </p>
+              </div>
+              <div class="p-4 bg-bone-100 dark:bg-ink-850 border border-bone-border dark:border-ink-700">
+                <span class="text-ink-600 dark:text-bone-400 text-[10px] font-bold block uppercase tracking-wider mb-1">03 // Quantified Result</span>
+                <p class="leading-relaxed text-telemetry-green font-semibold">
+                  100% unified access control across operations teams. Reduced onboarding time to 0 manual credentials and passed financial compliance audits with zero findings.
+                </p>
+              </div>
+            </div>
+
+            <!-- Code/Architecture Snippet -->
+            <div class="p-3 bg-ink-950 text-bone-200 text-[11px] rounded-none border border-ink-800">
+              <span class="text-ink-muted text-[10px] block mb-1">// Spring Security Active Directory Authentication Provider:</span>
+              <span class="text-telemetry-greenGlow">ActiveDirectoryLdapAuthenticationProvider provider = new ActiveDirectoryLdapAuthenticationProvider(domain, url);</span>
+              <span class="block text-bone-400 mt-1">provider.setConvertSubErrorCodesToExceptions(true);</span>
+              <span class="block text-bone-400">provider.setUserDetailsContextMapper(new CustomBankingAuthoritiesMapper());</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- Case 02: APM Observability (Instana & Zabbix) -->
+        <article class="border border-bone-border dark:border-ink-800 bg-bone-50 dark:bg-ink-900 transition-all">
+          <div class="p-6 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4" onclick="toggleCaseStudy('case-02')">
+            <div class="space-y-1.5">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="font-mono text-xs font-bold px-2 py-0.5 bg-ink-950 dark:bg-bone-100 text-bone-100 dark:text-ink-950">PROD_02</span>
+                <span class="text-[11px] font-mono px-2 py-0.5 border border-bone-border dark:border-ink-700 bg-bone-200 dark:bg-ink-800 text-ink-950 dark:text-bone-100">
+                  ENV: Mission-Critical Core Banking
+                </span>
+                <span class="text-[11px] font-mono text-telemetry-amber font-semibold">TYPE: Observability &amp; APM</span>
+              </div>
+              <h3 class="text-xl font-bold font-sans text-ink-950 dark:text-bone-100">IBM Instana Core Banking APM &amp; Zabbix Infrastructure Telemetry</h3>
+            </div>
+            <div class="flex items-center space-x-6 text-xs font-mono text-ink-600 dark:text-bone-400">
+              <div class="hidden sm:block">STACK: <strong class="text-ink-900 dark:text-bone-200">IBM Instana / Zabbix / Linux / JVM Tracing</strong></div>
+              <div class="text-right">
+                <span class="text-ink-900 dark:text-bone-100 font-bold text-base block font-sans">MTTR &lt; 4m</span>
+                <span class="text-[10px] text-ink-600 dark:text-bone-400 uppercase">Incident Resolution</span>
+              </div>
+              <span id="arrow-case-02" class="transform transition-transform text-ink-950 dark:text-bone-200 font-mono text-base">↓</span>
+            </div>
+          </div>
+
+          <div id="body-case-02" class="hidden px-6 pb-6 pt-2 border-t border-bone-border/70 dark:border-ink-800 text-ink-800 dark:text-bone-300 space-y-4 text-xs font-mono">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+              <div class="p-4 bg-bone-100 dark:bg-ink-850 border border-bone-border dark:border-ink-700">
+                <span class="text-ink-600 dark:text-bone-400 text-[10px] font-bold block uppercase tracking-wider mb-1">01 // The Bottleneck</span>
+                <p class="leading-relaxed text-ink-900 dark:text-bone-200">
+                  Intermittent transaction slowdowns during month-end financial balancing without clear insight into whether the issue resided in the database connection pool, message queues, or host memory saturation.
+                </p>
+              </div>
+              <div class="p-4 bg-bone-100 dark:bg-ink-850 border border-bone-border dark:border-ink-700">
+                <span class="text-ink-600 dark:text-bone-400 text-[10px] font-bold block uppercase tracking-wider mb-1">02 // The Observability Mesh</span>
+                <p class="leading-relaxed text-ink-900 dark:text-bone-200">
+                  Deployed IBM Instana APM with automatic byte-code injection across JVM banking applications, coupled with customized Zabbix agents monitoring OS kernel metrics, swap usage, and raw disk IOPS.
+                </p>
+              </div>
+              <div class="p-4 bg-bone-100 dark:bg-ink-850 border border-bone-border dark:border-ink-700">
+                <span class="text-ink-600 dark:text-bone-400 text-[10px] font-bold block uppercase tracking-wider mb-1">03 // Impact</span>
+                <p class="leading-relaxed text-telemetry-green font-semibold">
+                  End-to-end distributed transaction tracing down to the specific SQL statement and RPC span. Mean Time to Resolution (MTTR) dropped by 72%.
+                </p>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Case 03: Multi-Agent AI System -->
+        <article class="border border-bone-border dark:border-ink-800 bg-bone-50 dark:bg-ink-900 transition-all">
+          <div class="p-6 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4" onclick="toggleCaseStudy('case-03')">
+            <div class="space-y-1.5">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="font-mono text-xs font-bold px-2 py-0.5 bg-ink-950 dark:bg-bone-100 text-bone-100 dark:text-ink-950">PROD_03</span>
+                <span class="text-[11px] font-mono px-2 py-0.5 border border-bone-border dark:border-ink-700 bg-bone-200 dark:bg-ink-800 text-ink-950 dark:text-bone-100">
+                  PROGRAM: AWS AI &amp; ML Challenge
+                </span>
+                <span class="text-[11px] font-mono text-telemetry-blue font-semibold">TYPE: Multi-Agent AI &amp; LLMs</span>
+              </div>
+              <h3 class="text-xl font-bold font-sans text-ink-950 dark:text-bone-100">Autonomous Multi-Agent Orchestrator via AWS Bedrock &amp; Strands SDK</h3>
+            </div>
+            <div class="flex items-center space-x-6 text-xs font-mono text-ink-600 dark:text-bone-400">
+              <div class="hidden sm:block">STACK: <strong class="text-ink-900 dark:text-bone-200">Bedrock AgentCore / Strands SDK / Python / Tool Calling</strong></div>
+              <div class="text-right">
+                <span class="text-ink-900 dark:text-bone-100 font-bold text-base block font-sans">Multi-Agent</span>
+                <span class="text-[10px] text-ink-600 dark:text-bone-400 uppercase">Self-Routing</span>
+              </div>
+              <span id="arrow-case-03" class="transform transition-transform text-ink-950 dark:text-bone-200 font-mono text-base">↓</span>
+            </div>
+          </div>
+
+          <div id="body-case-03" class="hidden px-6 pb-6 pt-2 border-t border-bone-border/70 dark:border-ink-800 text-ink-800 dark:text-bone-300 space-y-4 text-xs font-mono">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+              <div class="p-4 bg-bone-100 dark:bg-ink-850 border border-bone-border dark:border-ink-700">
+                <span class="text-ink-600 dark:text-bone-400 text-[10px] font-bold block uppercase tracking-wider mb-1">01 // The Objective</span>
+                <p class="leading-relaxed text-ink-900 dark:text-bone-200">
+                  Move beyond single-prompt chatbots to a robust multi-agent architecture capable of reasoning, dispatching tool calls, querying databases, and executing structured workflows with deterministic safety.
+                </p>
+              </div>
+              <div class="p-4 bg-bone-100 dark:bg-ink-850 border border-bone-border dark:border-ink-700">
+                <span class="text-ink-600 dark:text-bone-400 text-[10px] font-bold block uppercase tracking-wider mb-1">02 // Multi-Agent Pipeline</span>
+                <p class="leading-relaxed text-ink-900 dark:text-bone-200">
+                  Orchestrated specialized agents using Amazon Bedrock AgentCore and the Strands Agents SDK in Python. Implemented structured function calling, memory persistence, dynamic prompt guardrails, and automated human-in-the-loop escalation.
+                </p>
+              </div>
+              <div class="p-4 bg-bone-100 dark:bg-ink-850 border border-bone-border dark:border-ink-700">
+                <span class="text-ink-600 dark:text-bone-400 text-[10px] font-bold block uppercase tracking-wider mb-1">03 // Architectural Result</span>
+                <p class="leading-relaxed text-telemetry-green font-semibold">
+                  Zero hallucinations on internal policy lookups. Decoupled agents independently handle triage, data retrieval, and ticket updates via standardized OpenAPI schema execution.
+                </p>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Case 04: AI / Deep Learning Research Paper -->
+        <article class="border border-bone-border dark:border-ink-800 bg-bone-50 dark:bg-ink-900 transition-all">
+          <div class="p-6 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4" onclick="toggleCaseStudy('case-04')">
+            <div class="space-y-1.5">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="font-mono text-xs font-bold px-2 py-0.5 bg-ink-950 dark:bg-bone-100 text-bone-100 dark:text-ink-950">RESEARCH_04</span>
+                <span class="text-[11px] font-mono px-2 py-0.5 border border-bone-border dark:border-ink-700 bg-bone-200 dark:bg-ink-800 text-ink-950 dark:text-bone-100">
+                  CONF: ICITC 2025 / London, UK
+                </span>
+                <span class="text-[11px] font-mono text-ink-700 dark:text-bone-300 font-semibold">TYPE: Computer Vision &amp; Research</span>
+              </div>
+              <h3 class="text-xl font-bold font-sans text-ink-950 dark:text-bone-100">Alzheimer's Disease Diagnosis via Deep Learning Architectures</h3>
+            </div>
+            <div class="flex items-center space-x-6 text-xs font-mono text-ink-600 dark:text-bone-400">
+              <div class="hidden sm:block">STACK: <strong class="text-ink-900 dark:text-bone-200">PyTorch / CNNs / Vision Transformers / Python</strong></div>
+              <div class="text-right">
+                <span class="text-ink-900 dark:text-bone-100 font-bold text-base block font-sans">ICITC 2025</span>
+                <span class="text-[10px] text-ink-600 dark:text-bone-400 uppercase">Peer Reviewed</span>
+              </div>
+              <span id="arrow-case-04" class="transform transition-transform text-ink-950 dark:text-bone-200 font-mono text-base">↓</span>
+            </div>
+          </div>
+
+          <div id="body-case-04" class="hidden px-6 pb-6 pt-2 border-t border-bone-border/70 dark:border-ink-800 text-ink-800 dark:text-bone-300 space-y-4 text-xs font-mono">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+              <div class="p-4 bg-bone-100 dark:bg-ink-850 border border-bone-border dark:border-ink-700">
+                <span class="text-ink-600 dark:text-bone-400 text-[10px] font-bold block uppercase tracking-wider mb-1">01 // Academic Scope</span>
+                <p class="leading-relaxed text-ink-900 dark:text-bone-200">
+                  Early detection of Alzheimer's stages using MRI neuroimaging is notoriously susceptible to subtle spatial variance, requiring high-precision feature extraction and cross-validation across patient cohorts.
+                </p>
+              </div>
+              <div class="p-4 bg-bone-100 dark:bg-ink-850 border border-bone-border dark:border-ink-700">
+                <span class="text-ink-600 dark:text-bone-400 text-[10px] font-bold block uppercase tracking-wider mb-1">02 // Machine Learning Pipeline</span>
+                <p class="leading-relaxed text-ink-900 dark:text-bone-200">
+                  Developed end-to-end PyTorch pipelines benchmarking deep convolutional neural networks and transformer backbones. Implemented Grad-CAM visual interpretability to validate attention maps over hippocampal regions.
+                </p>
+              </div>
+              <div class="p-4 bg-bone-100 dark:bg-ink-850 border border-bone-border dark:border-ink-700">
+                <span class="text-ink-600 dark:text-bone-400 text-[10px] font-bold block uppercase tracking-wider mb-1">03 // Publication &amp; Presentation</span>
+                <p class="leading-relaxed text-telemetry-green font-semibold">
+                  Presented at the International Conference on Information Technology and Communications (ICITC 2025), demonstrating state-of-the-art multiclass classification accuracy on MRI datasets.
+                </p>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Case 05: Proxmox Homelab & Micro-Cluster -->
+        <article class="border border-bone-border dark:border-ink-800 bg-bone-50 dark:bg-ink-900 transition-all">
+          <div class="p-6 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4" onclick="toggleCaseStudy('case-05')">
+            <div class="space-y-1.5">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="font-mono text-xs font-bold px-2 py-0.5 bg-ink-950 dark:bg-bone-100 text-bone-100 dark:text-ink-950">LAB_05</span>
+                <span class="text-[11px] font-mono px-2 py-0.5 border border-bone-border dark:border-ink-700 bg-bone-200 dark:bg-ink-800 text-ink-950 dark:text-bone-100">
+                  ENV: Bare-Metal Homelab
+                </span>
+                <span class="text-[11px] font-mono text-ink-700 dark:text-bone-300 font-semibold">TYPE: Networking, DNS &amp; IaC</span>
+              </div>
+              <h3 class="text-xl font-bold font-sans text-ink-950 dark:text-bone-100">ThinkCentre Tiny Proxmox VE Cluster &amp; Zero-Trust Mesh</h3>
+            </div>
+            <div class="flex items-center space-x-6 text-xs font-mono text-ink-600 dark:text-bone-400">
+              <div class="hidden sm:block">STACK: <strong class="text-ink-900 dark:text-bone-200">Proxmox VE / Podman / Technitium DNS / Tailscale</strong></div>
+              <div class="text-right">
+                <span class="text-ink-900 dark:text-bone-100 font-bold text-base block font-sans">24/7/365</span>
+                <span class="text-[10px] text-ink-600 dark:text-bone-400 uppercase">Self-Hosted</span>
+              </div>
+              <span id="arrow-case-05" class="transform transition-transform text-ink-950 dark:text-bone-200 font-mono text-base">↓</span>
+            </div>
+          </div>
+
+          <div id="body-case-05" class="hidden px-6 pb-6 pt-2 border-t border-bone-border/70 dark:border-ink-800 text-ink-800 dark:text-bone-300 space-y-4 text-xs font-mono">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+              <div class="p-4 bg-bone-100 dark:bg-ink-850 border border-bone-border dark:border-ink-700">
+                <span class="text-ink-600 dark:text-bone-400 text-[10px] font-bold block uppercase tracking-wider mb-1">01 // Hardware &amp; Hypervisor</span>
+                <p class="leading-relaxed text-ink-900 dark:text-bone-200">
+                  Custom low-power bare-metal node (Lenovo ThinkCentre M720q Tiny) configured with Proxmox VE 8, NVMe storage pools, and Linux bridge VLAN tagging for sandboxed experimentation.
+                </p>
+              </div>
+              <div class="p-4 bg-bone-100 dark:bg-ink-850 border border-bone-border dark:border-ink-700">
+                <span class="text-ink-600 dark:text-bone-400 text-[10px] font-bold block uppercase tracking-wider mb-1">02 // Networking &amp; DNS</span>
+                <p class="leading-relaxed text-ink-900 dark:text-bone-200">
+                  Self-hosted authoritative Technitium DNS with recursive DNS-over-HTTPS. Integrated Tailscale mesh subnet router for zero-trust remote access to internal container workloads without exposing public open ports.
+                </p>
+              </div>
+              <div class="p-4 bg-bone-100 dark:bg-ink-850 border border-bone-border dark:border-ink-700">
+                <span class="text-ink-600 dark:text-bone-400 text-[10px] font-bold block uppercase tracking-wider mb-1">03 // Daily Reliability</span>
+                <p class="leading-relaxed text-telemetry-green font-semibold">
+                  Hosts continuous local CI/CD testing, Podman rootless services, and staging databases with automated snapshot replication.
+                </p>
+              </div>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ================= INTERACTIVE OPERATOR CLI TERMINAL ================= -->
+    <section id="terminal" class="space-y-4">
+      <div class="flex items-center justify-between border-b border-bone-border dark:border-ink-800 pb-3">
+        <div class="flex items-center space-x-2">
+          <span class="w-3 h-3 bg-ink-950 dark:bg-bone-100 inline-block"></span>
+          <h2 class="text-lg font-bold font-mono tracking-tight text-ink-950 dark:text-bone-100">RUNBOOK_INSPECTOR // ANTHONY-TTY</h2>
+        </div>
+        <div class="text-[11px] font-mono text-ink-600 dark:text-bone-400 hidden sm:block">
+          INTERACTIVE PROFILE &amp; STACK SHELL
+        </div>
+      </div>
+
+      <!-- Terminal Box -->
+      <div class="border border-bone-border dark:border-ink-800 bg-ink-950 text-bone-100 font-mono shadow-md overflow-hidden">
+        <!-- Top Bar -->
+        <div class="bg-ink-900 px-4 py-2 border-b border-ink-800 flex items-center justify-between text-[11px]">
+          <div class="flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-telemetry-red"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-telemetry-amber"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-telemetry-green"></span>
+            <span class="ml-2 text-ink-muted">anthony@bastion.cuenca: ~ (zsh / session #01)</span>
+          </div>
+          <span class="text-ink-muted text-[10px]">AUTHORIZED SHELL</span>
+        </div>
+
+        <!-- Terminal Window Screen -->
+        <div id="terminal-screen" class="p-5 text-xs sm:text-[13px] space-y-2.5 min-h-[260px] max-h-[380px] overflow-y-auto font-mono leading-relaxed">
+          <div class="text-ink-muted">
+            Anthony Moya Ochoa &bull; Infrastructure Systems &amp; Software Engineer<br>
+            Environment: Linux 6.8.0-pve x86_64 | Location: Cuenca, Ecuador<br>
+            Type <span class="text-bone-100 font-bold">help</span> to list available commands.
+          </div>
+          <div class="text-telemetry-greenGlow">
+            [SYS] AWS Certified Cloud Practitioner [Score: 890] | All sub-agents and clusters nominal.
+          </div>
+        </div>
+
+        <!-- Terminal Input Line -->
+        <div class="px-4 py-3 bg-ink-900/90 border-t border-ink-800 flex items-center space-x-2 text-xs sm:text-sm font-mono">
+          <span class="text-telemetry-greenGlow font-bold">anthony@ops:#</span>
+          <input 
+            type="text" 
+            id="terminal-input" 
+            autocomplete="off" 
+            spellcheck="false"
+            placeholder="Type 'help', 'cat profile.json', 'view stack'..."
+            class="bg-transparent flex-1 text-bone-100 focus:outline-none placeholder-ink-muted font-mono"
+            onkeydown="handleTerminalKey(event)"
+          />
+          <button onclick="submitTerminalCmd()" class="px-3 py-1 bg-bone-100 text-ink-950 text-xs font-bold font-mono hover:bg-bone-200 transition-colors">
+            EXEC
+          </button>
+        </div>
+      </div>
+
+      <!-- Preset Command Badges -->
+      <div class="flex flex-wrap items-center gap-2 pt-1 font-mono text-xs">
+        <span class="text-ink-600 dark:text-bone-400 text-[11px]">Direct Triggers:</span>
+        <button onclick="runPreset('contact')" class="px-2.5 py-1 border border-bone-border dark:border-ink-800 bg-bone-50 dark:bg-ink-900 hover:border-ink-950 dark:hover:border-bone-100 transition-all font-semibold text-telemetry-green">contact</button>
+        <button onclick="runPreset('career')" class="px-2.5 py-1 border border-bone-border dark:border-ink-800 bg-bone-50 dark:bg-ink-900 hover:border-ink-950 dark:hover:border-bone-100 transition-all font-semibold">career</button>
+        <button onclick="runPreset('socials')" class="px-2.5 py-1 border border-bone-border dark:border-ink-800 bg-bone-50 dark:bg-ink-900 hover:border-ink-950 dark:hover:border-bone-100 transition-all">socials</button>
+        <button onclick="runPreset('cat profile.json')" class="px-2.5 py-1 border border-bone-border dark:border-ink-800 bg-bone-50 dark:bg-ink-900 hover:border-ink-950 dark:hover:border-bone-100 transition-all">cat profile.json</button>
+        <button onclick="runPreset('view stack')" class="px-2.5 py-1 border border-bone-border dark:border-ink-800 bg-bone-50 dark:bg-ink-900 hover:border-ink-950 dark:hover:border-bone-100 transition-all">view stack</button>
+        <button onclick="runPreset('ls projects')" class="px-2.5 py-1 border border-bone-border dark:border-ink-800 bg-bone-50 dark:bg-ink-900 hover:border-ink-950 dark:hover:border-bone-100 transition-all">ls projects</button>
+        <button onclick="runPreset('clear')" class="px-2.5 py-1 border border-bone-border dark:border-ink-800 bg-bone-50 dark:bg-ink-900 text-ink-600 dark:text-bone-400 hover:text-ink-950 dark:hover:text-bone-100 transition-all">clear</button>
+      </div>
+    </section>
+
+    <!-- ================= TECHNICAL MATRIX: DUAL STACK ================= -->
+    <section class="space-y-6">
+      <div class="border-b border-bone-border dark:border-ink-800 pb-4">
+        <span class="text-xs font-mono text-ink-600 dark:text-bone-400 uppercase tracking-widest">// DOMAIN EXPERTISE</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-ink-950 dark:text-bone-50 font-sans tracking-tight">Full-Stack &amp; Systems Engineering Matrix</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 border-t border-l border-bone-border dark:border-ink-800">
+        
+        <!-- Domain 1: Software & Backend -->
+        <div class="border-r border-b border-bone-border dark:border-ink-800 p-6 bg-bone-50/70 dark:bg-ink-900/60 space-y-4">
+          <div class="flex items-center justify-between text-xs font-mono text-ink-600 dark:text-bone-400">
+            <span>PILLAR_01</span>
+            <span class="w-2 h-2 bg-ink-950 dark:bg-bone-100"></span>
+          </div>
+          <h3 class="font-bold text-lg font-sans text-ink-950 dark:text-bone-100">Software &amp; Full-Stack</h3>
+          <ul class="text-xs font-mono space-y-2 text-ink-800 dark:text-bone-300">
+            <li class="flex items-center space-x-2">
+              <span class="text-telemetry-green font-bold">✓</span>
+              <span>Spring Boot (Java 17/21)</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <span class="text-telemetry-green font-bold">✓</span>
+              <span>Angular (TypeScript / RxJS)</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <span class="text-telemetry-green font-bold">✓</span>
+              <span>Python (FastAPI / Scripts / Async)</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <span class="text-telemetry-green font-bold">✓</span>
+              <span>Active Directory &amp; LDAP Auth</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <span class="text-telemetry-green font-bold">✓</span>
+              <span>PostgreSQL / MySQL / Redis</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Domain 2: Cloud & Infrastructure -->
+        <div class="border-r border-b border-bone-border dark:border-ink-800 p-6 bg-bone-50/70 dark:bg-ink-900/60 space-y-4">
+          <div class="flex items-center justify-between text-xs font-mono text-ink-600 dark:text-bone-400">
+            <span>PILLAR_02</span>
+            <span class="w-2 h-2 bg-ink-950 dark:bg-bone-100"></span>
+          </div>
+          <h3 class="font-bold text-lg font-sans text-ink-950 dark:text-bone-100">Cloud &amp; Virtualization</h3>
+          <ul class="text-xs font-mono space-y-2 text-ink-800 dark:text-bone-300">
+            <li class="flex items-center space-x-2">
+              <span class="text-telemetry-green font-bold">✓</span>
+              <span>AWS (VPC, EC2, S3, IAM, Route53)</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <span class="text-telemetry-green font-bold">✓</span>
+              <span>Proxmox VE Cluster (KVM / LXC)</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <span class="text-telemetry-green font-bold">✓</span>
+              <span>Docker &amp; Rootless Podman</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <span class="text-telemetry-green font-bold">✓</span>
+              <span>Kubernetes Fundamental Pods</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <span class="text-telemetry-green font-bold">✓</span>
+              <span>Terraform &amp; Infrastructure as Code</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Domain 3: Observability & Network -->
+        <div class="border-r border-b border-bone-border dark:border-ink-800 p-6 bg-bone-50/70 dark:bg-ink-900/60 space-y-4">
+          <div class="flex items-center justify-between text-xs font-mono text-ink-600 dark:text-bone-400">
+            <span>PILLAR_03</span>
+            <span class="w-2 h-2 bg-ink-950 dark:bg-bone-100"></span>
+          </div>
+          <h3 class="font-bold text-lg font-sans text-ink-950 dark:text-bone-100">Observability &amp; Mesh</h3>
+          <ul class="text-xs font-mono space-y-2 text-ink-800 dark:text-bone-300">
+            <li class="flex items-center space-x-2">
+              <span class="text-telemetry-green font-bold">✓</span>
+              <span>IBM Instana APM (Bytecode tracing)</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <span class="text-telemetry-green font-bold">✓</span>
+              <span>Zabbix Monitoring &amp; Alert Scripts</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <span class="text-telemetry-green font-bold">✓</span>
+              <span>Tailscale Mesh &amp; Subnet Routing</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <span class="text-telemetry-green font-bold">✓</span>
+              <span>Technitium DNS &amp; Encrypted DoH</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <span class="text-telemetry-green font-bold">✓</span>
+              <span>Linux (Ubuntu / Debian / RHEL)</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Domain 4: AI & Machine Learning -->
+        <div class="border-r border-b border-bone-border dark:border-ink-800 p-6 bg-bone-50/70 dark:bg-ink-900/60 space-y-4">
+          <div class="flex items-center justify-between text-xs font-mono text-ink-600 dark:text-bone-400">
+            <span>PILLAR_04</span>
+            <span class="w-2 h-2 bg-ink-950 dark:bg-bone-100"></span>
+          </div>
+          <h3 class="font-bold text-lg font-sans text-ink-950 dark:text-bone-100">Autonomous Agents &amp; AI</h3>
+          <ul class="text-xs font-mono space-y-2 text-ink-800 dark:text-bone-300">
+            <li class="flex items-center space-x-2">
+              <span class="text-telemetry-green font-bold">✓</span>
+              <span>AWS Bedrock AgentCore</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <span class="text-telemetry-green font-bold">✓</span>
+              <span>Strands Agents SDK (Multi-Agent)</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <span class="text-telemetry-green font-bold">✓</span>
+              <span>Deep Learning with PyTorch</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <span class="text-telemetry-green font-bold">✓</span>
+              <span>Vision Transformers &amp; CNNs</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <span class="text-telemetry-green font-bold">✓</span>
+              <span>Odoo Custom Python Modules</span>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================= CONTACT & DIRECT DISPATCH (EDITORIAL) ================= -->
+    <section id="contact" class="border border-bone-border dark:border-ink-800 bg-bone-50 dark:bg-ink-900 relative overflow-hidden">
+      
+      <!-- Top Status Banner -->
+      <div class="border-b border-bone-border dark:border-ink-800 px-6 sm:px-10 py-3 bg-bone-100/70 dark:bg-ink-950/70 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+        <div class="flex items-center space-x-2.5">
+          <span class="w-2 h-2 rounded-full bg-telemetry-green pulse-beacon"></span>
+          <span class="font-bold tracking-wider text-ink-950 dark:text-bone-100 uppercase">LIVE DISPATCH // STATUS: OPEN</span>
+        </div>
+        <div class="text-ink-600 dark:text-bone-400">
+          SYSTEM_TARGET: <strong class="text-ink-900 dark:text-bone-200">CLOUD, SRE &amp; FULL-STACK ARCHITECTURES</strong>
+        </div>
+      </div>
+
+      <div class="p-6 sm:p-10 lg:p-12 space-y-10">
+        
+        <!-- Large Editorial Headline & Email Trigger -->
+        <div class="space-y-4 max-w-4xl">
+          <span class="text-xs font-mono text-ink-600 dark:text-bone-400 uppercase tracking-widest">// SECURE INGRESS &bull; DIRECT TRANSMISSION</span>
+          <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold font-sans tracking-tight text-ink-950 dark:text-bone-50 leading-tight">
+            Have an infrastructure challenge or high-performance engineering need? Let's connect.
+          </h2>
+          <p class="text-xs sm:text-sm font-mono text-ink-700 dark:text-bone-300 max-w-2xl leading-relaxed">
+            Directly available for enterprise cloud infrastructure (AWS), distributed APM observability, full-stack Spring Boot / Angular systems, or autonomous multi-agent AI implementations.
+          </p>
+
+          <!-- Main Interactive Big Email Clicker -->
+          <div class="pt-4">
+            <div 
+              onclick="copyEmail()" 
+              class="group cursor-pointer inline-flex flex-col sm:flex-row sm:items-center justify-between border-2 border-ink-950 dark:border-bone-100 bg-bone-100 dark:bg-ink-950 p-4 sm:p-6 hover:bg-ink-950 hover:text-bone-100 dark:hover:bg-bone-100 dark:hover:text-ink-950 transition-all w-full max-w-3xl shadow-sm"
+            >
+              <div class="space-y-1 font-mono">
+                <span class="text-[10px] text-ink-600 dark:text-bone-400 group-hover:text-bone-300 dark:group-hover:text-ink-700 block uppercase tracking-wider">
+                  PRIMARY TRANSMISSION ENDPOINT [CLICK TO COPY]
+                </span>
+                <span id="email-val" class="text-lg sm:text-2xl lg:text-3xl font-bold tracking-tight select-all">
+                  anthonymoya246@gmail.com
+                </span>
+              </div>
+              <div class="mt-3 sm:mt-0 flex items-center space-x-2 text-xs font-mono">
+                <span id="copy-email-btn" class="px-3 py-1.5 border border-current font-bold uppercase tracking-wider">
+                  COPY ADDR
+                </span>
+                <span class="text-base group-hover:translate-x-1 transition-transform">→</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4-Card Minimalist Routing Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono text-xs">
+          
+          <!-- Card 1: GitHub -->
+          <a 
+            href="https://github.com/anthonazo" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            class="p-5 border border-bone-border dark:border-ink-800 bg-bone-100/60 dark:bg-ink-850/60 hover:border-ink-950 dark:hover:border-bone-100 transition-all flex flex-col justify-between group space-y-3"
+          >
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] text-ink-600 dark:text-bone-400 uppercase">REPO VAULT</span>
+              <span class="text-xs group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">↗</span>
+            </div>
+            <div>
+              <span class="font-sans font-bold text-base text-ink-950 dark:text-bone-50 block">GitHub</span>
+              <span class="text-ink-700 dark:text-bone-300 text-[11px]">github.com/anthonazo</span>
+            </div>
+            <div class="text-[10px] text-ink-600 dark:text-bone-400 pt-1 border-t border-bone-border/50 dark:border-ink-800">
+              Repositories, IaC modules, agent experiments
+            </div>
+          </a>
+
+          <!-- Card 2: LinkedIn -->
+          <a 
+            href="https://linkedin.com/in/anthonazo" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            class="p-5 border border-bone-border dark:border-ink-800 bg-bone-100/60 dark:bg-ink-850/60 hover:border-ink-950 dark:hover:border-bone-100 transition-all flex flex-col justify-between group space-y-3"
+          >
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] text-ink-600 dark:text-bone-400 uppercase">PROFESSIONAL GRAPH</span>
+              <span class="text-xs group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">↗</span>
+            </div>
+            <div>
+              <span class="font-sans font-bold text-base text-ink-950 dark:text-bone-50 block">LinkedIn</span>
+              <span class="text-ink-700 dark:text-bone-300 text-[11px]">linkedin.com/in/anthonazo</span>
+            </div>
+            <div class="text-[10px] text-ink-600 dark:text-bone-400 pt-1 border-t border-bone-border/50 dark:border-ink-800">
+              Career trajectory, endorsements, verified credentials
+            </div>
+          </a>
+
+          <!-- Card 3: Mail Client Direct -->
+          <a 
+            href="mailto:anthonymoya246@gmail.com" 
+            class="p-5 border border-bone-border dark:border-ink-800 bg-bone-100/60 dark:bg-ink-850/60 hover:border-ink-950 dark:hover:border-bone-100 transition-all flex flex-col justify-between group space-y-3"
+          >
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] text-ink-600 dark:text-bone-400 uppercase">DIRECT DISPATCH</span>
+              <span class="text-xs group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform">↗</span>
+            </div>
+            <div>
+              <span class="font-sans font-bold text-base text-ink-950 dark:text-bone-50 block">Open Mail Client</span>
+              <span class="text-ink-700 dark:text-bone-300 text-[11px]">mailto:anthonymoya246...</span>
+            </div>
+            <div class="text-[10px] text-ink-600 dark:text-bone-400 pt-1 border-t border-bone-border/50 dark:border-ink-800">
+              Immediate dispatch via default mailer
+            </div>
+          </a>
+
+          <!-- Card 4: Location & Availability -->
+          <div class="p-5 border border-bone-border dark:border-ink-800 bg-bone-100/60 dark:bg-ink-850/60 flex flex-col justify-between space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] text-ink-600 dark:text-bone-400 uppercase">BASE LOCATION</span>
+              <span class="w-2 h-2 rounded-full bg-telemetry-green pulse-beacon"></span>
+            </div>
+            <div>
+              <span class="font-sans font-bold text-base text-ink-950 dark:text-bone-50 block">Cuenca, Ecuador</span>
+              <span class="text-ink-700 dark:text-bone-300 text-[11px]">Timezone: UTC-5 (EST aligned)</span>
+            </div>
+            <div class="text-[10px] text-ink-600 dark:text-bone-400 pt-1 border-t border-bone-border/50 dark:border-ink-800">
+              Available for remote global operations
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Terminal Quick-Action Snippet -->
+        <div class="p-3 bg-ink-950 text-bone-200 font-mono text-[11px] border border-ink-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div class="flex items-center space-x-2">
+            <span class="text-telemetry-greenGlow">$</span>
+            <span class="text-bone-300">curl -sL https://anthonazo.dev/fingerprint | gpg --import</span>
+          </div>
+          <span class="text-[10px] text-ink-muted">2048R/ANTHONY-MOYA-OCHOA &bull; SIGNED</span>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= EDITORIAL FOOTER ================= -->
+  <footer class="border-t border-bone-border dark:border-ink-800 mt-16 py-8 bg-bone-100 dark:bg-ink-950 font-mono text-xs text-ink-600 dark:text-bone-400">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <span class="w-2 h-2 bg-ink-950 dark:bg-bone-100"></span>
+        <span class="text-ink-900 dark:text-bone-200 font-bold">ANTHONY JOEL MOYA OCHOA</span>
+        <span class="text-bone-borderDark dark:text-ink-700">&bull;</span>
+        <span>CUENCA, EC [UTC-5]</span>
+      </div>
+      <div class="flex items-center space-x-4">
+        <a href="https://github.com/anthonazo" target="_blank" rel="noopener noreferrer" class="hover:text-ink-950 dark:hover:text-white underline underline-offset-4">GitHub ↗</a>
+        <a href="https://linkedin.com/in/anthonazo" target="_blank" rel="noopener noreferrer" class="hover:text-ink-950 dark:hover:text-white underline underline-offset-4">LinkedIn ↗</a>
+        <a href="mailto:anthonymoya246@gmail.com" class="hover:text-ink-950 dark:hover:text-white underline underline-offset-4">Email ↗</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= LOGIC & INTERACTION SCRIPTS ================= -->
+  <script>
+    // Live Telemetry Clock (Local & UTC)
+    function updateClock() {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      const el = document.getElementById('utc-clock');
+      if (el) el.innerText = `${hours}:${minutes}:${seconds}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Theme Toggle Functionality
+    function toggleTheme() {
+      const html = document.documentElement;
+      const isDark = html.classList.contains('dark');
+      if (isDark) {
+        html.classList.remove('dark');
+        document.getElementById('theme-icon').innerText = '◐';
+      } else {
+        html.classList.add('dark');
+        document.getElementById('theme-icon').innerText = '◑';
+      }
+    }
+
+    // Topology Node Definitions
+    const topologyNodes = {
+      perimeter: {
+        tag: 'AWS_PERIMETER',
+        title: 'Cloud Edge & Route 53 DNS Mesh',
+        desc: 'Front-facing AWS infrastructure enforcing TLS certificates, DDoS mitigation, and Tailscale encrypted mesh networking for authorized developer tunnels.',
+        engine: 'AWS Route 53 / Tailscale VPN / Cloudflare',
+        subnet: '10.0.0.0/16 (VPC Core)',
+        obs: 'AWS CloudWatch + Route53 Healthchecks',
+        status: 'Healthy (0 Route flaps in 90 days)',
+        logs: [
+          '$ tailscale status --json | jq .Self.HostName',
+          '[tailscale] "aws-perimeter-gw" active (100.84.12.90)',
+          '[dns] Route53 resolution latency: 12ms avg'
+        ]
+      },
+      gateway: {
+        tag: 'ENTERPRISE_GATEWAY',
+        title: 'Enterprise Reverse Proxy & AD SSO Gateway',
+        desc: 'Centralized edge ingress orchestrating Active Directory authentication, automated Kerberos/JWT token issuance, and secure reverse proxy routing into internal banking containers.',
+        engine: 'Nginx / Go Gateway + Kerberos LDAP',
+        subnet: 'VLAN 40 (DMZ) &bull; Tailscale Auth Node',
+        obs: 'Instana Tracing + Zabbix Agent2',
+        status: '100% Up &bull; Active Token Validation',
+        logs: [
+          '$ ldapsearch -H ldaps://ad.corp -b "dc=corp,dc=internal"',
+          '[ad-sso] BIND successful for user: bank_operator_08',
+          '[proxy] JWT signed with RSA-256 (expires in 3600s)'
+        ]
+      },
+      coreapp: {
+        tag: 'CORE_APP_FABRIC',
+        title: 'Full-Stack Banking Application Cluster',
+        desc: 'Containerized Java Spring Boot microservices serving transactional REST endpoints to an Angular 17 SPA, decoupled via clean architecture and strict DTO contracts.',
+        engine: 'Spring Boot 3.2 (Java 21) &bull; Angular 17',
+        subnet: '10.100.20.0/24 (App Tier)',
+        obs: 'IBM Instana Bytecode Tracing',
+        status: 'Active (P99 latency &lt; 42ms)',
+        logs: [
+          '$ docker ps --filter "label=tier=banking"',
+          '[spring-boot] HikariPool-1: 15/20 active connections',
+          '[angular] AOT compiled bundles served via HTTP/2'
+        ]
+      },
+      agents: {
+        tag: 'AGENT_CORE_AI',
+        title: 'Amazon Bedrock & Strands Multi-Agent Core',
+        desc: 'Autonomous multi-agent runtime utilizing Bedrock AgentCore and Strands Agents SDK to orchestrate specialized tool execution, structured data lookups, and customer workflows.',
+        engine: 'Amazon Bedrock AgentCore &bull; Strands SDK (Python)',
+        subnet: 'AWS Lambda / Fargate Micro-Cluster',
+        obs: 'OpenTelemetry Trace Hooks',
+        status: 'Operational (0 unhandled tool call failures)',
+        logs: [
+          '$ python -m agents.orchestrator --mode=dispatch',
+          '[agent-triage] Intent classified: "account_reconciliation"',
+          '[strands-sdk] Tool call routed to: "db_query_vault" with guardrails OK'
+        ]
+      },
+      apm: {
+        tag: 'INSTANA_ZABBIX',
+        title: 'Distributed APM & Observability Mesh',
+        desc: 'Full-stack distributed tracing fabric using IBM Instana agent sensors across JVM runtimes, combined with low-level Zabbix system monitoring across Linux hosts.',
+        engine: 'IBM Instana Agent &bull; Zabbix 6.4 LTS',
+        subnet: '10.100.60.0/24 (Telemetry Enclave)',
+        obs: 'Self-monitoring &bull; 1-second metric resolution',
+        status: 'Active (0 open critical alerts)',
+        logs: [
+          '$ systemctl status instana-agent zabbix-agent2',
+          '[instana] 32 Java JVM instances actively traced',
+          '[zabbix] All host traps ACKed, 0 threshold breaches'
+        ]
+      },
+      homelab: {
+        tag: 'PROXMOX_M720Q',
+        title: 'Lenovo ThinkCentre Proxmox VE Edge Lab',
+        desc: 'Dedicated on-premise hardware node running Proxmox VE 8, Technitium encrypted DNS server, rootless Podman containers, and experimental staging clusters.',
+        engine: 'Proxmox VE 8 &bull; Podman &bull; Technitium DNS',
+        subnet: '192.168.10.0/24 (LAN / Bridge VLANs)',
+        obs: 'Zabbix SNMP &bull; PVE Cluster API',
+        status: 'Uptime: 142 days without reboot',
+        logs: [
+          '$ pct list && podman ps',
+          '[pve] VM 101 (Ubuntu 24.04 LTS): RUNNING (2GB RAM)',
+          '[dns] Technitium DoH queries resolved: 14,820 today'
+        ]
+      }
+    };
+
+    let currentNodeKey = 'gateway';
+
+    function inspectNode(key) {
+      currentNodeKey = key;
+      const data = topologyNodes[key];
+      if (!data) return;
+
+      document.getElementById('node-tag').innerText = data.tag;
+      document.getElementById('node-title').innerText = data.title;
+      document.getElementById('node-desc').innerText = data.desc;
+      document.getElementById('node-engine').innerHTML = data.engine;
+      document.getElementById('node-subnet').innerHTML = data.subnet;
+      document.getElementById('node-obs').innerHTML = data.obs;
+      document.getElementById('node-status').innerHTML = data.status;
+
+      document.getElementById('node-log-1').innerText = data.logs[0];
+      document.getElementById('node-log-2').innerText = data.logs[1];
+      document.getElementById('node-log-3').innerText = data.logs[2];
+
+      // Update SVG highlights
+      ['perimeter', 'gateway', 'coreapp', 'agents', 'apm', 'homelab'].forEach(id => {
+        const el = document.getElementById(`rect-${id}`);
+        if (el) {
+          if (id === key) {
+            el.setAttribute('fill', '#111215');
+            // Change text color if necessary
+          } else {
+            el.setAttribute('fill', '#EBE5D8');
+          }
+        }
+      });
+    }
+
+    function pingCurrentNode() {
+      const btnIndicator = document.getElementById('ping-btn-indicator');
+      btnIndicator.innerText = 'PROBING...';
+      
+      setTimeout(() => {
+        btnIndicator.innerText = '● (ACK: 0.9ms)';
+        writeTerminalLine(`[PROBE] Target node '${topologyNodes[currentNodeKey].tag}' replied with HTTP 200 OK &bull; latency 0.92ms`, 'text-telemetry-greenGlow');
+      }, 400);
+    }
+
+    // Toggle Case Studies Accordion
+    function toggleCaseStudy(id) {
+      const body = document.getElementById(`body-${id}`);
+      const arrow = document.getElementById(`arrow-${id}`);
+      if (!body || !arrow) return;
+
+      const isHidden = body.classList.contains('hidden');
+      if (isHidden) {
+        body.classList.remove('hidden');
+        arrow.innerText = '↑';
+      } else {
+        body.classList.add('hidden');
+        arrow.innerText = '↓';
+      }
+    }
+
+    // Interactive CLI Terminal
+    function writeTerminalLine(text, className = 'text-bone-100') {
+      const screen = document.getElementById('terminal-screen');
+      const p = document.createElement('div');
+      p.className = `${className} font-mono leading-relaxed`;
+      p.innerHTML = text;
+      screen.appendChild(p);
+      screen.scrollTop = screen.scrollHeight;
+    }
+
+    function handleTerminalKey(e) {
+      if (e.key === 'Enter') {
+        submitTerminalCmd();
+      }
+    }
+
+    function submitTerminalCmd() {
+      const input = document.getElementById('terminal-input');
+      const val = input.value.trim();
+      if (!val) return;
+
+      writeTerminalLine(`<span class="text-telemetry-greenGlow">anthony@ops:#</span> ${val}`);
+      executeCommand(val.toLowerCase());
+      input.value = '';
+    }
+
+    function runPreset(cmd) {
+      const input = document.getElementById('terminal-input');
+      input.value = cmd;
+      submitTerminalCmd();
+    }
+
+    function executeCommand(cmd) {
+      if (cmd === 'help') {
+        writeTerminalLine(`
+OPERATOR RUNBOOK COMMANDS:
+  • <strong class="text-bone-100">contact</strong>           : Secure direct communication &amp; social endpoints
+  • <strong class="text-bone-100">socials</strong>           : Links to GitHub and LinkedIn profiles
+  • <strong class="text-bone-100">career</strong>            : Print chronological professional ledger
+  • <strong class="text-bone-100">cat profile.json</strong>  : Detailed biography, credentials, and location
+  • <strong class="text-bone-100">view stack</strong>        : Print Full-Stack + Cloud + Infrastructure Matrix
+  • <strong class="text-bone-100">ls projects</strong>       : List production deployments and papers
+  • <strong class="text-bone-100">cat certs.txt</strong>     : AWS Certifications &amp; academic distinctions
+  • <strong class="text-bone-100">status</strong>            : Real-time telemetry check across clusters
+  • <strong class="text-bone-100">clear</strong>             : Wipe terminal buffer
+        `, 'text-bone-300');
+      } else if (cmd === 'contact' || cmd === 'socials' || cmd === 'github' || cmd === 'linkedin') {
+        writeTerminalLine(`
+[COMMUNICATION &amp; SOCIAL TELEMETRY]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+&bull; <strong>Email</strong>     : <a href="mailto:anthonymoya246@gmail.com" class="text-telemetry-greenGlow underline">anthonymoya246@gmail.com</a>
+&bull; <strong>GitHub</strong>    : <a href="https://github.com/anthonazo" target="_blank" class="text-telemetry-blueGlow underline">https://github.com/anthonazo</a> [anthonazo]
+&bull; <strong>LinkedIn</strong>  : <a href="https://linkedin.com/in/anthonazo" target="_blank" class="text-telemetry-blueGlow underline">https://linkedin.com/in/anthonazo</a>
+&bull; <strong>Location</strong>  : Cuenca, Ecuador [UTC-5 / EST equivalent]
+&bull; <strong>Status</strong>    : Available for Remote SRE, Cloud &amp; Full-Stack contracts
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        `, 'text-bone-100');
+      } else if (cmd === 'career' || cmd === 'experience') {
+        writeTerminalLine(`
+[OPERATIONAL CAREER AUDIT LOG]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+&bull; <strong>Banco del Austro</strong> [Nov 2025 - Present]
+  Role   : Infrastructure Systems Engineer
+  Scope  : APM Observability (IBM Instana), Zabbix, IaC (Terraform), Docker, Linux hardening, Financial compliance.
+
+&bull; <strong>Banco del Austro</strong> [May 2025 - Oct 2025]
+  Role   : Infrastructure &amp; Full-Stack Software Intern
+  Scope  : Angular 17, Spring Boot 3, Active Directory (LDAP SSO), Spring Security, Docker microservices.
+
+&bull; <strong>Cuenca Property Registry</strong> [May 2025 - Jun 2025]
+  Role   : IT Systems Engineering Practicum
+  Scope  : WildFly (JBoss) containerization, FIRMAEC PKI electronic signature module integration.
+
+&bull; <strong>ICITC 2025 (London, UK)</strong> [2025]
+  Role   : Co-Author &amp; Deep Learning Researcher
+  Scope  : Alzheimer diagnosis via PyTorch CNNs &amp; Vision Transformers, Grad-CAM visual interpretability.
+
+&bull; <strong>Salesian Polytechnic University (UPS)</strong> [Graduated]
+  Degree : B.S. in Computer Science Engineering
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        `, 'text-bone-200');
+      } else if (cmd === 'cat profile.json') {
+        writeTerminalLine(`
+{
+  <span class="text-telemetry-amber">"name"</span>: "Anthony Joel Moya Ochoa",
+  <span class="text-telemetry-amber">"title"</span>: "Infrastructure & Cloud Systems Engineer | Full-Stack Developer",
+  <span class="text-telemetry-amber">"location"</span>: "Cuenca, Ecuador",
+  <span class="text-telemetry-amber">"core_focus"</span>: ["Cloud Architecture", "Spring Boot & Angular", "IBM Instana & Zabbix", "Proxmox Homelab", "Multi-Agent AI"],
+  <span class="text-telemetry-amber">"certifications"</span>: ["AWS Certified Cloud Practitioner CLF-C02", "AWS Solutions Architect (Candidate)", "AWS AI & ML Scholar"],
+  <span class="text-telemetry-amber">"email"</span>: "anthonymoya246@gmail.com"
+}
+        `, 'text-bone-200');
+      } else if (cmd === 'view stack') {
+        writeTerminalLine(`
+[FULL-STACK SOFTWARE]
+- Java 17/21 (Spring Boot 3, Spring Security, Hibernate, Maven)
+- TypeScript / JavaScript (Angular 17, RxJS, REST APIs)
+- Python (FastAPI, PyTorch, Bedrock AgentCore, Strands SDK)
+- Enterprise Auth (Active Directory, LDAP, Kerberos, JWT)
+
+[INFRASTRUCTURE, CLOUD & OBSERVABILITY]
+- AWS (VPC, Route53, EC2, IAM, Bedrock, CloudWatch)
+- Virtualization (Proxmox VE 8, LXC containers, KVM, Podman, Docker)
+- APM & Telemetry (IBM Instana distributed tracing, Zabbix Monitoring)
+- Networking (Tailscale zero-trust mesh, Technitium DNS, Linux Bridges)
+        `, 'text-bone-200');
+      } else if (cmd === 'ls projects') {
+        writeTerminalLine(`
+drwxr-xr-x  prod_01  Enterprise Banking Portal & Active Directory Gateway (Spring Boot + Angular)
+drwxr-xr-x  prod_02  IBM Instana Banking APM & Zabbix Infrastructure Telemetry
+drwxr-xr-x  prod_03  Autonomous Multi-Agent Orchestrator (AWS Bedrock & Strands SDK)
+drwxr-xr-x  paper_04 Alzheimer's Disease Diagnosis via Deep Learning (ICITC 2025)
+drwxr-xr-x  lab_05   Proxmox VE ThinkCentre M720q Cluster & Technitium DNS Mesh
+        `, 'text-bone-200');
+      } else if (cmd === 'cat certs.txt') {
+        writeTerminalLine(`
+✓ AWS Certified Cloud Practitioner (CLF-C02) - Score: 890 / 1000
+✓ AWS Solutions Architect Associate (In progress)
+✓ AWS Artificial Intelligence & Machine Learning Scholar
+✓ Research Speaker at ICITC 2025 (Deep Learning & Neuroimaging)
+        `, 'text-telemetry-greenGlow');
+      } else if (cmd === 'status') {
+        writeTerminalLine(`
+[HEALTHCHECK DRILL]
+&bull; AWS Cloud Resources   : NOMINAL
+&bull; Enterprise Spring Apps: RUNNING (0 error rate)
+&bull; Instana APM Tracing   : 100% telemetry coverage
+&bull; Proxmox M720q Lab     : ONLINE (Load: 0.42, Temp: 38C)
+&bull; Multi-Agent AI Core   : READY (Bedrock API connected)
+        `, 'text-bone-200');
+      } else if (cmd === 'contact') {
+        writeTerminalLine(`Email: anthonymoya246@gmail.com | Location: Cuenca, Ecuador (Available for remote global engagements)`, 'text-telemetry-greenGlow');
+      } else if (cmd === 'clear') {
+        document.getElementById('terminal-screen').innerHTML = '';
+      } else {
+        writeTerminalLine(`bash: command not found: '${cmd}'. Type 'help' for options.`, 'text-telemetry-red');
+      }
+    }
+
+    // Copy Email to clipboard
+    function copyEmail() {
+      const email = "anthonymoya246@gmail.com";
+      const btn = document.getElementById('copy-email-btn');
+      const heroLabel = document.getElementById('hero-copy-label');
+      
+      const textarea = document.createElement('textarea');
+      textarea.value = email;
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        if (btn) btn.innerText = 'COPIED TO CLIPBOARD!';
+        if (heroLabel) heroLabel.innerText = 'COPIED TO CLIPBOARD!';
+        writeTerminalLine(`[CLIPBOARD] Address '${email}' copied successfully.`, 'text-telemetry-greenGlow');
+        setTimeout(() => { 
+          if (btn) btn.innerText = 'COPY ADDR'; 
+          if (heroLabel) heroLabel.innerText = email;
+        }, 2200);
+      } catch (err) {
+        if (btn) btn.innerText = 'FAILED';
+      }
+      document.body.removeChild(textarea);
+    }
+  </script>
+</body>
+</html>
